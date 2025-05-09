@@ -2,20 +2,26 @@ import React, { useState, useEffect } from "react";
 import AllMessage from "./AllMessage";
 import axios from "../helper/Axios";
 import { FaUserCircle } from "react-icons/fa";
-import { IoSearchSharp } from "react-icons/io5";
 import { NavLink } from "react-router-dom";
 import { FaArrowCircleLeft } from "react-icons/fa";
 import { IoMdCheckmarkCircle } from "react-icons/io";
 
+interface UnassignedUser {
+  user_id: number;
+  session_id: string | null;
+  name: string | null;
+  last_active: string | null;
+  assigned: boolean;
+}
+
 const Unassigned = () => {
-  const [unassignedUsers, setUnassignedUsers] = useState([]);
+  const [unassignedUsers, setUnassignedUsers] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [getagent, setGetagent] = useState([]);
+  const [selectedUser, setSelectedUser] = useState<UnassignedUser | null>(null);
+  const [getagent, setGetagent] = useState<any>([]);
   const [selectedAgents, setSelectedAgents] = useState({});
-  // New state for popup
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
 
@@ -117,11 +123,11 @@ const Unassigned = () => {
       user_id: user.user_id,
     };
 
-    console.log("Assignment request data:", requestData);
+    // console.log("Assignment request data:", requestData);
 
     try {
       const response = await axios.post("/transfer", requestData);
-      console.log("Assignment successful:", response.data);
+      // console.log("Assignment successful:", response.data);
 
       // Update UI
       setUnassignedUsers((prev) =>
@@ -274,9 +280,9 @@ const Unassigned = () => {
                       value={selectedAgents[user.session_id] || ""}
                       onChange={(e) => {
                         const agentId = e.target.value;
-                        console.log(
-                          `Selected agent ID: ${agentId} for session ${user.session_id}`
-                        );
+                        // console.log(
+                        //   `Selected agent ID: ${agentId} for session ${user.session_id}`
+                        // );
                         setSelectedAgents((prev) => ({
                           ...prev,
                           [user.session_id]: agentId,
@@ -305,7 +311,7 @@ const Unassigned = () => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeInDown {
           from {
             opacity: 0;

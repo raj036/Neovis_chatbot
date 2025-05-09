@@ -50,7 +50,7 @@ interface ChatWindowProps {
 }
 
 interface AllMessageProps {
-  initialSessionId?: string;
+  initialSessionId?: string | null;
   initialUserName?: string;
   onBack?: () => void;
 }
@@ -375,7 +375,7 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
           },
         }
       );
-      console.log(response.data);
+      // console.log(response.data);
 
       const resp = response.data;
 

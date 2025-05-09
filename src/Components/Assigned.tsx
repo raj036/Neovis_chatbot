@@ -5,12 +5,21 @@ import { FaUserCircle } from "react-icons/fa";
 import { FaArrowCircleLeft } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 
+interface AssignedUser {
+  user_id: number;
+  session_id: string | null;
+  name: string | null;
+  agent_name: string;
+  last_active: string | null;
+  assigned: boolean;
+}
+
 const Assigned = () => {
-  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<null>(null);
+  const [error, setError] = useState<null | string>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<AssignedUser | null>(null);
   const [showAllMessage, setShowAllMessage] = useState(false);
 
   useEffect(() => {
@@ -19,14 +28,14 @@ const Assigned = () => {
 
   useEffect(() => {
     if (assignedUsers.length > 0) {
-      console.log(
-        "All agent names:",
-        assignedUsers.map((user) => ({
-          user_id: user?.user_id,
-          agent_name: user?.agent_name,
-          session_id: user?.session_id,
-        }))
-      );
+      // console.log(
+      //   "All agent names:",
+      //   assignedUsers.map((user) => ({
+      //     user_id: user?.user_id,
+      //     agent_name: user?.agent_name,
+      //     session_id: user?.session_id,
+      //   }))
+      // );
     }
   }, [assignedUsers]);
 
@@ -34,7 +43,7 @@ const Assigned = () => {
     setLoading(true);
     try {
       const response = await axios.get("/assigned_users");
-      console.log("Assigned users data:", response.data);
+      // console.log("Assigned users data:", response.data);
       setAssignedUsers(response.data);
       setError(null);
     } catch (err) {
@@ -49,7 +58,7 @@ const Assigned = () => {
     setSelectedUser(null);
   };
 
-  const filteredUsers = assignedUsers.filter(
+  const filteredUsers: AssignedUser[] = assignedUsers.filter(
     (user) =>
       !searchQuery ||
       (user.user_id && user.user_id.toString().includes(searchQuery)) ||
@@ -65,7 +74,6 @@ const Assigned = () => {
         initialUserName={
           selectedUser.name || `User ID: ${selectedUser.user_id}`
         }
-        agentName={selectedUser.agent_name}
         onBack={handleBack}
       />
     );
@@ -95,10 +103,10 @@ const Assigned = () => {
       ) : filteredUsers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredUsers.map((user) => {
-            console.log(
-              `Rendering user ${user.user_id} with agent:`,
-              user.agent_name
-            );
+            // console.log(
+            //   `Rendering user ${user.user_id} with agent:`,
+            //   user.agent_name
+            // );
             return (
               <div
                 key={user.session_id}
