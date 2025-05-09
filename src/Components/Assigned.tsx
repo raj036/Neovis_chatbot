@@ -82,7 +82,7 @@ const Assigned = () => {
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       <div className="flex gap-8 items-center mb-6">
-        <NavLink to={"/"}>
+        <NavLink to={"/chatbot/"}>
           <button className="cursor-pointer p-2 text-white bg-gray-400 rounded-lg">
             <FaArrowCircleLeft />
           </button>

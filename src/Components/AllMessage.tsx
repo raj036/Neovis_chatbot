@@ -30,6 +30,7 @@ interface Chat {
   timestamp: string;
   status: "Urgent" | "Open" | "Closed" | string;
   userName?: string;
+  userId?: string;
 }
 
 interface ChatListItemProps {
@@ -94,28 +95,33 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ chat, isActive, onClick }) 
       <div className="flex-grow ml-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-gray-800">{chat.userName || "Guest User"}</h3>
-          <span className="text-xs text-gray-500">{formatDate(chat.timestamp)}</span>
+          {/* <span className="text-xs text-gray-500">{formatDate(chat.timestamp)}</span> */}
         </div>
         <p className="text-sm text-gray-600 truncate mt-1 max-w-[200px]">
-          {chat.lastMessage || "Start a new conversation"}
+          {/* {chat.lastMessage || "Start a new conversation"} */}
         </p>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center">
+            {chat.userId && (
+              <span className="bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs mr-2 font-medium">
+               User ID: {chat.userId}
+              </span>
+            )}
             {chat.status === 'Urgent' && (
               <span className="bg-red-100 text-red-600 rounded-full px-2 py-0.5 text-xs mr-2 font-medium">
                 Urgent
               </span>
             )}
-            <button className="text-gray-400 hover:text-yellow-500 transition-colors">
+            {/* <button className="text-gray-400 hover:text-yellow-500 transition-colors">
               <IoIosStarOutline className="text-lg" />
             </button>
             <button className="text-gray-400 hover:text-blue-500 transition-colors ml-2">
               <MdPersonAddAlt1 className="text-lg" />
-            </button>
+            </button> */}
           </div>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(chat.status)}`}>
+          {/* <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(chat.status)}`}>
             {chat.status || "Open"}
-          </span>
+          </span> */}
         </div>
       </div>
       <button className="ml-2 p-1 rounded-full hover:bg-gray-200 transition-colors">
@@ -274,7 +280,57 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [currentUserName, setCurrentUserName] = useState<string>(initialUserName || "Guest User");
 
-  // Load session data if initialSessionId is provided
+  const loadChatFromStorage = async (id: string, userName?: string): Promise<void> => {
+    if (!id) return;
+
+    setActiveSessionId(id);
+    setMessages([]);
+    setLoading(true);
+
+    if (userName) {
+      setCurrentUserName(userName);
+    }
+
+    try {
+      const response = await axios.get(`/Get_session_chat/?session_id=${id}`);
+      const conversationHistory = response.data["Conversation History"] || [];
+      
+      const formattedMessages: Message[] = [];
+      let currentUserMessage = "";
+      
+      conversationHistory.forEach((entry: string) => {
+        if (entry.startsWith("USER-> ")) {
+          currentUserMessage = entry.replace("USER-> ", "");
+        } else if (entry.startsWith("RESPONSE-> ") && currentUserMessage) {
+          const aiResponse = entry.replace("RESPONSE-> ", "");
+          const timestamp = new Date().toISOString();
+          
+          formattedMessages.push(
+            {
+              sender: "User",
+              text: currentUserMessage,
+              timestamp: timestamp
+            },
+            {
+              sender: "AI",
+              text: aiResponse,
+              timestamp: timestamp
+            }
+          );
+          
+          currentUserMessage = "";
+        }
+      });
+
+      setMessages(formattedMessages);
+    } catch (err) {
+      console.error('Error loading chat history:', err);
+      setError("Failed to load conversation history.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (initialSessionId) {
       loadChatFromStorage(initialSessionId, initialUserName);
@@ -301,24 +357,6 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
     setFilterStatus(status);
     if (isMobile) {
       setShowSidebar(false);
-    }
-  };
-
-  const loadChatFromStorage = (id: string, userName?: string): void => {
-    if (!id) return;
-
-    setActiveSessionId(id);
-    setMessages([]);
-
-    if (userName) {
-      setCurrentUserName(userName);
-    }
-
-    // Here you would fetch previous messages if needed
-    // Example: fetchPreviousMessages(id);
-
-    if (isMobile) {
-      setShowChatList(false);
     }
   };
 
@@ -375,15 +413,9 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
           },
         }
       );
-      // console.log(response.data);
 
       const resp = response.data;
-
-      const userWantsCustomerCare = /connect.*customer\s*care/i.test(
-        currentInput
-      );
-
-      // Use the backend response or override it based on user input
+      const userWantsCustomerCare = /connect.*customer\s*care/i.test(currentInput);
       const aiResponse = userWantsCustomerCare
         ? resp
         : response.data["AI Response: "] ||
@@ -404,7 +436,6 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
         setSessionId(newSessionId);
         setActiveSessionId(newSessionId);
 
-        // Show chat window immediately after first message
         if (isMobile) {
           setShowChatList(false);
         }
@@ -414,7 +445,8 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
           lastMessage: aiResponse,
           timestamp: responseTimestamp,
           status: "Open",
-          userName: currentUserName
+          userName: currentUserName,
+          userId: newSessionId.substring(0, 8)
         };
 
         setChatList(prevList => [newChat, ...prevList]);
@@ -441,43 +473,52 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
     }
   };
 
-  // Load messages when activeSessionId changes
-  useEffect(() => {
-    const loadMessagesForSession = async () => {
-      if (activeSessionId) {
-        try {
-          setLoading(true);
-          // You would implement this endpoint in your backend
-          const response = await axios.get(`/Guest_user/chat/history/${activeSessionId}`);
-          if (response.data && response.data.messages) {
-            setMessages(response.data.messages.map((msg: any) => ({
-              sender: msg.role === "user" ? "User" : "AI",
-              text: msg.content,
-              timestamp: msg.timestamp
-            })));
+  const fetchAllUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/Get_all_session_chat/');
+      
+      if (response.data && Array.isArray(response.data)) {
+        const formattedChats: Chat[] = response.data.map((session: any) => {
+          const sessionId = session.session_id || session.id || `session-${Math.random().toString(36).substring(2, 10)}`;
+          // let lastMessage = "No messages";
+          
+          if (session.messages && session.messages.length > 0) {
+            const lastMsg = session.messages[session.messages.length - 1];
+            // lastMessage = lastMsg.content || lastMsg.text || "Empty message";
           }
-        } catch (err) {
-          console.error('Error loading messages:', err);
-          setError("Failed to load conversation history.");
-        } finally {
-          setLoading(false);
-        }
+          
+          return {
+            id: sessionId,
+            // lastMessage: lastMessage,
+            timestamp: session.timestamp || new Date().toISOString(),
+            status: session.status || "Open",
+            userName: session.user_name || "Guest User",
+            userId: session.user_id || sessionId.substring(0, 8)
+          };
+        });
+        
+        setChatList(formattedChats);
+      } else {
+        setError("Invalid response format from API");
       }
-    };
-
-    // Uncomment this when you have the API endpoint ready
-    // loadMessagesForSession();
-
-    // For now, we'll just reset messages when switching chats
-    if (activeSessionId && initialSessionId && activeSessionId !== initialSessionId) {
-      setMessages([]);
+    } catch (err) {
+      console.error('Error fetching all users:', err);
+      setError("Failed to load chat sessions. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  }, [activeSessionId, initialSessionId]);
+  };
+
+  useEffect(() => {
+    fetchAllUsers();
+  }, []);
 
   const filteredChats = chatList.filter(chat => {
     const matchesSearch = !searchQuery ||
       (chat.lastMessage && chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (chat.userName && chat.userName.toLowerCase().includes(searchQuery.toLowerCase()));
+      (chat.userName && chat.userName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (chat.userId && chat.userId.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = filterStatus === 'all' || chat.status === filterStatus;
 
@@ -498,7 +539,6 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
 
   return (
     <div className="flex h-screen">
-      {/* Mobile Sidebar Toggle */}
       {isMobile && !showSidebar && (
         <button
           onClick={() => setShowSidebar(true)}
@@ -508,7 +548,6 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
         </button>
       )}
 
-      {/* Sidebar */}
       {showSidebar && (
         <Sidebar
           setFilterStatus={handleFilterStatus}
@@ -519,10 +558,8 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
       )}
 
       <div className="flex flex-grow md:ml-64 w-full">
-        {/* Chat List Column - shown on desktop or when showChatList is true on mobile */}
         {(showChatList || !isMobile) && !initialSessionId && (
           <div className={`${isMobile ? 'w-full absolute z-10 bg-white h-full' : 'w-1/3'} bg-white overflow-hidden flex flex-col shadow-lg`}>
-            {/* Header with Search and Filter */}
             <div className="border-b border-gray-200 p-4">
               <div className="flex items-center space-x-2">
                 {isMobile && (
@@ -557,7 +594,6 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
                 </button>
               </div>
 
-              {/* Filter buttons */}
               <div className="flex items-center mt-3 space-x-2 overflow-x-auto pb-2">
                 <button
                   className={`py-2 px-3 rounded-md text-sm font-medium transition-colors ${filterStatus === 'Urgent' ? 'bg-red-500 text-white' : 'text-gray-700 hover:bg-gray-100'
@@ -580,17 +616,9 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
                 >
                   Closed
                 </button>
-                {/* <button
-                  className={`py-2 px-3 rounded-md text-sm font-medium transition-colors ${filterStatus === 'all' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'
-                    } whitespace-nowrap`}
-                  onClick={() => handleFilterStatus('all')}
-                >
-                  All
-                </button> */}
               </div>
             </div>
 
-            {/* Chat List */}
             <div className="flex-grow overflow-y-auto">
               {error && (
                 <div className="p-3 bg-red-50 text-red-600 border-l-4 border-red-500 mx-3 mb-2 rounded-r-md">
@@ -606,22 +634,25 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
                 </div>
               )}
 
-              <div className="p-3">
-                {/* <button
-                  onClick={createNewChat}
-                  className="w-full p-3 mb-3 flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <FiPlusCircle className="mr-2" />
-                  New Chat
-                </button> */}
+              {loading && chatList.length === 0 && (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              )}
 
+              <div className="p-3">
                 {filteredChats.length > 0 ? (
                   filteredChats.map((chat) => (
                     <ChatListItem
                       key={chat.id}
                       chat={chat}
                       isActive={chat.id === activeSessionId}
-                      onClick={() => loadChatFromStorage(chat.id, chat.userName)}
+                      onClick={() => {
+                        loadChatFromStorage(chat.id, chat.userName);
+                        if (isMobile) {
+                          setShowChatList(false);
+                        }
+                      }}
                     />
                   ))
                 ) : (
@@ -650,7 +681,6 @@ const AllMessage: React.FC<AllMessageProps> = ({ initialSessionId, initialUserNa
           </div>
         )}
 
-        {/* Chat Window Column - shown on desktop or when showChatList is false on mobile */}
         {(!showChatList || !isMobile || initialSessionId) && (
           <div className={`${isMobile ? 'w-full' : 'flex-grow'}`}>
             <ChatWindow
