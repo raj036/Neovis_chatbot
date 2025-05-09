@@ -14,7 +14,7 @@ import UserChatWindow from "./Components/UserChatWindow";
 function App() {
   return (
     <>
-      <BrowserRouter>
+      <BrowserRouter basename="/neovis">
         <Routes>
           <Route path="/" element={<AllMessage />} />
 
