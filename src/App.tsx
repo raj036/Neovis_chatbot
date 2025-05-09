@@ -17,6 +17,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<AllMessage />} />
+
           <Route path="/all-messages" element={<AllMessage />} />
           <Route path="/ai-messages" element={<AIMessage />} />
           <Route path="/assigned" element={<Assigned />} />
@@ -24,6 +25,8 @@ function App() {
           <Route path="/important" element={<Important />} />
           <Route path="/closed" element={<Closed />} />
           <Route path="/userchat" element={<UserChatWindow />} />
+          <Route path="/userchat" element={<UserChatWindow />} />
+          <Route path="/assigned" element={<Assigned />} />
         </Routes>
       </BrowserRouter>
     </>

@@ -113,7 +113,7 @@ const UserChatWindow: React.FC<UserChatWindowProps> = ({
 
       const aiResponse =
         response.data["AI Response: "] ||
-        "Could you please clarify your question.";
+        "Wait a moment....Call connected successfully.";
       const newSessionId = response.data["session_id"];
 
       const botMessage: Message = {

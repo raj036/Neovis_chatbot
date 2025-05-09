@@ -1,13 +1,13 @@
-import React from 'react'
+import React from "react";
 // import Sidebar from './Sidebar'
-import AllMessage from './AllMessage'
+import AllMessage from "./AllMessage";
 
 const AIMessage = () => {
   return (
     <>
-        <AllMessage/>
-        </>
-  )
-}
+      <AllMessage />
+    </>
+  );
+};
 
-export default AIMessage
+export default AIMessage;
